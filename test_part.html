@@ -1,0 +1,75 @@
+<!doctype html>
+<html>
+<head>
+<title>IDK, just testing stuff I guess, LOL</title>
+<meta name='author' value='Martin Wikström'>
+<style type='text/css'>
+body, html {
+    margin: 0;
+    padding: 0;
+}
+canvas {
+    width: 100%;
+    height: 100%;
+    background-color: #edc;
+    position: absolute;
+}
+</style>
+<script type='text/javascript' src='world.class.js'></script>
+<script type='text/javascript' src='poly.class.js'></script>
+<script type='text/javascript' src='part.class.js'></script>
+<script type='text/javascript' src='item.class.js'></script>
+<script type='text/javascript' src='unit.class.js'></script>
+<script type='text/javascript'>
+var w = {};
+function init() {
+    w = new world("canvas", window.innerWidth, window.innerHeight);
+    
+    // Generate part
+    w.part = new part({'x': 100, 'y': 100}, 0);
+    w.part.polys.push(new poly([
+        {'x': -30, 'y': -15},
+        {'x': -55, 'y': -10},
+        {'x': -55, 'y': 10},
+        {'x': -30, 'y': 15}
+    ], {'r': 0.5, 'g': 0.5, 'b': 0.5}, {'y': 0.5, 'z': 0.3}));
+    w.part.polys.push(new poly([
+        {'x': 50, 'y': 0},
+        {'x': -50, 'y': 0},
+        {'x': -30, 'y': 20}
+    ], {'r': 0.7, 'g': 0.2, 'b': 0.4}, {'y': 0.25, 'z': 0.7}));
+    w.part.polys.push(new poly([
+        {'x': 50, 'y': 0},
+        {'x': -50, 'y': 0},
+        {'x': -30, 'y': -20}
+    ], {'r': 0.7, 'g': 0.2, 'b': 0.4}, {'y': -0.25, 'z': 0.7}));
+    w.part.polys.push(new poly([
+        {'x': 0, 'y': -7},
+        {'x': 15, 'y': -3},
+        {'x': 15, 'y': 3},
+        {'x': 0, 'y': 7}
+    ], {'r': 0.3, 'g': 0.2, 'b': 0.5}, {'y': 0, 'z': 0.1}));
+    w.part.polys.push(new poly([
+        {'x': 0, 'y': -7},
+        {'x': -5, 'y': -3},
+        {'x': -5, 'y': 3},
+        {'x': 0, 'y': 7}
+    ], {'r': 0.3, 'g': 0.2, 'b': 0.5}, {'y': 0.5, 'z': 0.1}));
+    
+    // Start loop
+    w.tick = 0;
+    loop();
+}
+function loop() {
+    w.c.clearRect(0, 0, w.canvas.width, w.canvas.height);
+    w.tick++;
+    w.part.dir += 0.01;
+    w.part.drawAt(w.c, w.part.pos, w.part.dir, 0);
+    setTimeout(loop, 50);
+}
+</script>
+</head>
+<body onload='init()'>
+<canvas id='canvas'></canvas>
+</body>
+</html>

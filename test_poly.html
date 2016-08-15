@@ -1,0 +1,48 @@
+<!doctype html>
+<html>
+<head>
+<title>IDK, just testing stuff I guess, LOL</title>
+<meta name='author' value='Martin Wikström'>
+<style type='text/css'>
+body, html {
+    margin: 0;
+    padding: 0;
+}
+canvas {
+    width: 100%;
+    height: 100%;
+    background-color: #edc;
+    position: absolute;
+}
+</style>
+<script type='text/javascript' src='world.class.js'></script>
+<script type='text/javascript' src='poly.class.js'></script>
+<script type='text/javascript' src='part.class.js'></script>
+<script type='text/javascript' src='item.class.js'></script>
+<script type='text/javascript' src='unit.class.js'></script>
+<script type='text/javascript'>
+var w = {};
+function init() {
+    w = new world("canvas", window.innerWidth, window.innerHeight);
+    w.polys = [];
+    for(var i = 0; i < 20; i++) {
+        w.polys.push(new poly([
+            {'x': 0, 'y': 0},
+            {'x': Math.cos((i / 20) * Math.PI * 2.0) * 20, 'y': Math.sin((i / 20) * Math.PI * 2.0) * 20},
+            {'x': Math.cos(((i + 0.9) / 20) * Math.PI * 2.0) * 20, 'y': Math.sin(((i + 0.9) / 20) * Math.PI * 2.0) * 20}
+        ], {'r': i / 20, 'g': 0.5, 'b': 1 - i / 20}, {'y': i / 20, 'z': i / 20}));
+    }
+    w.tick = 0;
+    loop();
+}
+function loop() {
+    w.tick++;
+    for(var i = 0; i < w.polys.length; i++) w.polys[i].drawAt(w.c, 100, 100, w.tick * 0.01);
+    setTimeout(loop, 50);
+}
+</script>
+</head>
+<body onload='init()'>
+<canvas id='canvas'></canvas>
+</body>
+</html>
