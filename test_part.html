@@ -26,7 +26,7 @@ function init() {
     w = new world("canvas", window.innerWidth, window.innerHeight);
     
     // Generate part
-    w.part = new part({'x': 100, 'y': 100}, 0);
+    w.part = new part({'x': 100, 'y': 100});
     w.part.polys.push(new poly([
         {'x': -30, 'y': -15},
         {'x': -55, 'y': -10},
@@ -63,8 +63,7 @@ function init() {
 function loop() {
     w.c.clearRect(0, 0, w.canvas.width, w.canvas.height);
     w.tick++;
-    w.part.dir += 0.01;
-    w.part.drawAt(w.c, w.part.pos, w.part.dir, 0);
+    w.part.drawAt(w.c, w.part.pos, w.tick * 0.01);
     setTimeout(loop, 50);
 }
 </script>

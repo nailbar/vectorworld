@@ -1,0 +1,80 @@
+<!doctype html>
+<html>
+<head>
+<title>IDK, just testing stuff I guess, LOL</title>
+<meta name='author' value='Martin Wikström'>
+<style type='text/css'>
+body, html {
+    margin: 0;
+    padding: 0;
+}
+canvas {
+    width: 100%;
+    height: 100%;
+    background-color: #edc;
+    position: absolute;
+}
+</style>
+<script type='text/javascript' src='world.class.js'></script>
+<script type='text/javascript' src='poly.class.js'></script>
+<script type='text/javascript' src='part.class.js'></script>
+<script type='text/javascript' src='item.class.js'></script>
+<script type='text/javascript' src='unit.class.js'></script>
+<script type='text/javascript'>
+var w = {};
+function init() {
+    w = new world("canvas", window.innerWidth, window.innerHeight);
+    
+    // Generate unit
+    w.unit = new unit({'x': 100, 'y': 100}, 0);
+    w.unit.parts.push(generate_part("hull", 0, 0));
+    w.unit.parts.push(generate_part("thruster", -40, -15));
+    w.unit.parts.push(generate_part("thruster", -40, 15));
+    console.log(w.unit.parts);
+    
+    // Start loop
+    w.tick = 0;
+    loop();
+}
+function loop() {
+    w.c.clearRect(0, 0, w.canvas.width, w.canvas.height);
+    w.tick++;
+    w.unit.dir += 0.01;
+    w.unit.drawAt(w.c, w.unit.pos, w.unit.dir, 0);
+    setTimeout(loop, 50);
+}
+function generate_part(id, x, y) {
+    var p = new part({'x': x, 'y': y});
+    switch(id) {
+        case "hull":
+            p.polys.push(new poly([
+                {'x': 20, 'y': -10},
+                {'x': -20, 'y': -15},
+                {'x': -20, 'y': 15},
+                {'x': 20, 'y': 10}
+            ], {'r': 0.8, 'g': 0.6, 'b': 0.2}, {'y': 0, 'z': 0.7}));
+            p.polys.push(new poly([
+                {'x': -40, 'y': -5},
+                {'x': -20, 'y': -8},
+                {'x': -20, 'y': 8},
+                {'x': -40, 'y': 5}
+            ], {'r': 0.8, 'g': 0.6, 'b': 0.2}, {'y': 0.5, 'z': 0.5}));
+            return p;
+        case "thruster":
+            p.polys.push(new poly([
+                {'x': -15, 'y': -5},
+                {'x': 15, 'y': -8},
+                {'x': 20, 'y': 0},
+                {'x': 15, 'y': 8},
+                {'x': -15, 'y': 5}
+            ], {'r': 0.4, 'g': 0.4, 'b': 0.5}));
+            return p;
+            
+    }
+}
+</script>
+</head>
+<body onload='init()'>
+<canvas id='canvas'></canvas>
+</body>
+</html>

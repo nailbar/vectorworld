@@ -37,7 +37,7 @@ function init() {
 }
 function loop() {
     w.tick++;
-    for(var i = 0; i < w.polys.length; i++) w.polys[i].drawAt(w.c, 100, 100, w.tick * 0.01);
+    for(var i = 0; i < w.polys.length; i++) w.polys[i].drawAt(w.c, {'x': 100, 'y': 100}, w.tick * 0.01);
     setTimeout(loop, 50);
 }
 </script>

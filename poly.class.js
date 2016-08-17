@@ -61,9 +61,9 @@ function poly(vertices, color, dir) {
     /**
      * Draw polygon at specific coordinates
      */
-    this.drawAt = function(c, x, y, sun) {
+    this.drawAt = function(c, pos, sun) {
         c.save();
-        c.translate(x, y);
+        c.translate(pos.x, pos.y);
         this.draw(c, sun);
         c.restore();
     }

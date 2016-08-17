@@ -1,18 +1,16 @@
 /**
  * Part
  */
-function part(pos, dir) {
+function part(pos) {
     
     /** Set defaults */
     if(!pos) pos = {
         'x': 0,
         'y': 0
     };
-    if(!dir) dir = 0;
     
     /** Orientation and state */
     this.pos = pos;
-    this.dir = dir;
     
     /** The poygons the part consists of */
     this.polys = [];
@@ -25,17 +23,11 @@ function part(pos, dir) {
     }
     
     /**
-     * Draw part at coordinates and orientation
+     * Draw part at coordinates
      */
-    this.drawAt = function(c, pos, dir, sun) {
-        
-        // Reorient the sun direction
-        sun -= dir;
-        
-        // Manipulate matrix and draw polygons
+    this.drawAt = function(c, pos, sun) {
         c.save();
         c.translate(pos.x, pos.y);
-        c.rotate(dir * Math.PI * 2.0);
         this.draw(c, sun);
         c.restore();
     }
