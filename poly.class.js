@@ -66,6 +66,26 @@ function poly(vertices, color, dir) {
     }
     
     /**
+     * Stroke the polygon
+     */
+    this.stroke = function(c) {
+        
+        // Check if there's anything to draw
+        if(this.vertices.length < 2) return;
+        
+        // Set the vertices
+        c.beginPath();
+        c.moveTo(this.vertices[0].x, this.vertices[0].y);
+        for(var i = 1; i < this.vertices.length; i++) {
+            c.lineTo(this.vertices[i].x, this.vertices[i].y);
+        }
+        c.closePath();
+        
+        // Draw
+        c.stroke();
+    }
+    
+    /**
      * Draw polygon at specific coordinates
      */
     this.drawAt = function(c, pos, sun) {
@@ -73,6 +93,32 @@ function poly(vertices, color, dir) {
         c.translate(pos.x, pos.y);
         this.draw(c, sun);
         c.restore();
+    }
+    
+    /**
+     * Generate bounding box
+     */
+    this.getBoundingBox = function(vertices) {
+        var bbox = {
+            'min': {'x': 0, 'y': 0},
+            'max': {'x': 0, 'y': 0}
+        }
+        
+        // No vertices, default to 0,0,0,0
+        if(!vertices.length) return bbox;
+        
+        // Get the min and max values
+        bbox.min.x = bbox.max.x = vertices[0].x;
+        bbox.min.y = bbox.max.y = vertices[0].y;
+        for(var i = 1; i < vertices.length; i++) {
+            if(vertices[i].x < bbox.min.x) bbox.min.x = vertices[i].x;
+            if(vertices[i].y < bbox.min.y) bbox.min.y = vertices[i].y;
+            if(vertices[i].x > bbox.max.x) bbox.max.x = vertices[i].x;
+            if(vertices[i].y > bbox.max.y) bbox.max.y = vertices[i].y;
+        }
+        
+        // Done
+        return bbox;
     }
     
     /**
@@ -110,5 +156,162 @@ function poly(vertices, color, dir) {
         
         // Intersection found, return it
         return intersection;
+    }
+    
+    /**
+     * Polygin intersection calculations
+     */
+    this.getPolyIntersections = function(poly1, poly2) {
+        var v = {};
+        
+        // Check if bounding boxes intersect
+        v.bbox1 = this.getBoundingBox(poly1);
+        v.bbox2 = this.getBoundingBox(poly2);
+        if(v.bbox1.min.x > v.bbox2.max.x) return v;
+        if(v.bbox1.min.y > v.bbox2.max.y) return v;
+        if(v.bbox1.max.x < v.bbox2.min.x) return v;
+        if(v.bbox1.max.y < v.bbox2.min.y) return v;
+        v.bbox_test = true;
+        
+        // Check if starting point of poly1 is outside or inside poly2
+        v.start_outside = true;
+        v.outside_point = {'x': Math.min(v.bbox1.min.x, v.bbox2.min.x) - 100, 'y': 0};
+        for(var i2 = 0; i2 < poly2.length; i2++) {
+            if(this.getLineIntersection(v.outside_point, poly1[0], poly2[i2], poly2[(i2 + 1) % poly2.length])) {
+                v.start_outside = (v.start_outside ? false : true);
+            }
+        }
+        
+        // Search for intersections on poly1
+        v.cur_outside = v.start_outside;
+        v.poly1_ints = [];
+        v.poly2_ipoints = [];
+        for(var i1 = 0; i1 < poly1.length; i1++) {
+            v.poly1_ints.push({'x': poly1[i1].x, 'y': poly1[i1].y, 'i1': i1, 'i2': -1});
+            
+            // Get direction indicator for line so we can check in what order the intersections happen
+            v.cur_ray = {
+                'x': poly1[(i1 + 1) % poly1.length].x - poly1[i1].x,
+                'y': poly1[(i1 + 1) % poly1.length].y - poly1[i1].y
+            };
+            v.cur_ints = [];
+            
+            // Check which lines the current line intersects
+            for(var i2 = 0; i2 < poly2.length; i2++) {
+                
+                // Create reference arrays so we can easily find already calculated intersection points later on
+                if(v.poly2_ipoints.length <= i2) v.poly2_ipoints[i2] = [];
+                
+                // Check for intersection
+                v.cur_int = this.getLineIntersection(
+                    poly1[i1],
+                    poly1[(i1 + 1) % poly1.length],
+                    poly2[i2],
+                    poly2[(i2 + 1) % poly2.length]
+                );
+                if(v.cur_int) {
+                    
+                    // We need the intersection point relative to current line start so we can calculate distance
+                    v.rel_int = {
+                        'x': v.cur_int.x - poly1[i1].x,
+                        'y': v.cur_int.y - poly1[i1].y
+                    };
+                    v.cur_ints.push({
+                        'x': v.cur_int.x,
+                        'y': v.cur_int.y,
+                        'dist': v.cur_ray.x * v.rel_int.x + v.cur_ray.y * v.rel_int.y,
+                        'i2': i2
+                    });
+                }
+            }
+            
+            // Sort the intersection points by dinstance from line start
+            for(var i = 0; i < v.cur_ints.length - 1; i++) for(var u = i + 1; u < v.cur_ints.length; u++) {
+                if(v.cur_ints[i].dist > v.cur_ints[u].dist) {
+                    v.tmp_values = [v.cur_ints[i].x, v.cur_ints[i].y, v.cur_ints[i].dist, v.cur_ints[i].i2];
+                    v.cur_ints[i].x = v.cur_ints[u].x;
+                    v.cur_ints[i].y = v.cur_ints[u].y;
+                    v.cur_ints[i].dist = v.cur_ints[u].dist;
+                    v.cur_ints[i].i2 = v.cur_ints[u].i2;
+                    v.cur_ints[u].x = v.tmp_values[0];
+                    v.cur_ints[u].y = v.tmp_values[1];
+                    v.cur_ints[u].dist = v.tmp_values[2];
+                    v.cur_ints[u].i2 = v.tmp_values[3];
+                }
+            }
+            
+            // Add the sorted intersections to list
+            for(var i = 0; i < v.cur_ints.length; i++) {
+                v.cur_ints[i].out = v.cur_outside;
+                v.cur_ints[i].i1 = i1;
+                v.poly1_ints.push(v.cur_ints[i]);
+                
+                // For every intersection we alternate if we're on the inside or the outside
+                v.cur_outside = (v.cur_outside ? false : true);
+                
+                // Add reference for the poly2 loop
+                v.poly2_ipoints[v.cur_ints[i].i2].push(v.poly1_ints.length - 1);
+            }
+        }
+        
+        // Search for intersections on poly2
+        v.poly2_ints = [];
+        for(var i2 = 0; i2 < poly2.length; i2++) {
+            v.poly2_ints.push({'x': poly2[i2].x, 'y': poly2[i2].y, 'i1': -1, 'i2': i2});
+            
+            // Get direction indicator for line so we can check in what order the intersections happen
+            v.cur_ray = {
+                'x': poly2[(i2 + 1) % poly2.length].x - poly2[i2].x,
+                'y': poly2[(i2 + 1) % poly2.length].y - poly2[i2].y
+            };
+            v.cur_ints = [];
+            
+            // Check which lines the current line intersects
+            for(var ii = 0; ii < v.poly2_ipoints[i2].length; ii++) {
+                v.cur_int = v.poly1_ints[v.poly2_ipoints[i2][ii]];
+                
+                // We need the intersection point relative to current line start so we can calculate distance
+                v.rel_int = {
+                    'x': v.cur_int.x - poly2[i2].x,
+                    'y': v.cur_int.y - poly2[i2].y
+                };
+                v.cur_ints.push({
+                    'x': v.cur_int.x,
+                    'y': v.cur_int.y,
+                    'dist': v.cur_ray.x * v.rel_int.x + v.cur_ray.y * v.rel_int.y,
+                    'i1': v.cur_int.i1
+                });
+            }
+            
+            // Sort the intersection points by dinstance from line start
+            for(var i = 0; i < v.cur_ints.length - 1; i++) for(var u = i + 1; u < v.cur_ints.length; u++) {
+                if(v.cur_ints[i].dist > v.cur_ints[u].dist) {
+                    v.tmp_values = [v.cur_ints[i].x, v.cur_ints[i].y, v.cur_ints[i].dist, v.cur_ints[i].i1];
+                    v.cur_ints[i].x = v.cur_ints[u].x;
+                    v.cur_ints[i].y = v.cur_ints[u].y;
+                    v.cur_ints[i].dist = v.cur_ints[u].dist;
+                    v.cur_ints[i].i1 = v.cur_ints[u].i1;
+                    v.cur_ints[u].x = v.tmp_values[0];
+                    v.cur_ints[u].y = v.tmp_values[1];
+                    v.cur_ints[u].dist = v.tmp_values[2];
+                    v.cur_ints[u].i1 = v.tmp_values[3];
+                }
+            }
+            
+            // Add the sorted intersections to list
+            for(var i = 0; i < v.cur_ints.length; i++) {
+                v.cur_ints[i].i2 = i2;
+                v.poly2_ints.push(v.cur_ints[i]);
+            }
+        }
+        
+//         // Merge the polygons
+//         v.merged = [];
+//         for(var i = 0; i < 1000; i++) {
+//             v.merged.push(v.poly1_ints[i]
+//         }
+        
+        // Done, return results
+        return v;
     }
 }

@@ -34,6 +34,7 @@ function init() {
     }
     w.p = new poly();
     w.tick = 0;
+    w.loop = true;
     loop();
 }
 function loop() {
@@ -57,7 +58,44 @@ function loop() {
     w.c.stroke();
     if(w.inter.cross) w.c.strokeRect(w.inter.cross.x - 3, w.inter.cross.y - 3, 6, 6);
     
-    setTimeout(loop, 50);
+    // Test poly intersection
+    w.pi = {
+        'poly1': new poly([
+            {'x': 100 + Math.cos(w.tick * -0.01) * 50, 'y': 200 + Math.sin(w.tick * -0.02) * 50},
+            {'x': 200 + Math.cos(w.tick * 0.03) * 50, 'y': 200 + Math.sin(w.tick * 0.04) * 50},
+            {'x': 200 + Math.cos(w.tick * 0.015) * 50, 'y': 300 + Math.sin(w.tick * 0.025) * 50},
+            {'x': 100 + Math.cos(w.tick * 0.035) * 50, 'y': 300 + Math.sin(w.tick * 0.045) * 50}
+        ]),
+        'poly2': new poly([
+            {'x': 200 + Math.cos(w.tick * 0.011) * 50, 'y': 200 + Math.sin(w.tick * 0.014) * 50},
+            {'x': 150 + Math.cos(w.tick * 0.012) * 50, 'y': 300 + Math.sin(w.tick * 0.015) * 50},
+            {'x': 100 + Math.cos(w.tick * 0.013) * 50, 'y': 250 + Math.sin(w.tick * 0.016) * 50}
+        ])
+    }
+    w.pi.poly1.stroke(w.c);
+    w.pi.poly2.stroke(w.c);
+    w.pi.data = w.p.getPolyIntersections(w.pi.poly1.vertices, w.pi.poly2.vertices);
+    if(w.pi.data.start_outside) w.c.strokeRect(w.pi.poly1.vertices[0].x - 3, w.pi.poly1.vertices[0].y - 3, 6, 6);
+    else {
+        w.c.beginPath();
+        w.c.moveTo(w.pi.poly1.vertices[0].x - 3, w.pi.poly1.vertices[0].y - 3);
+        w.c.lineTo(w.pi.poly1.vertices[0].x + 3, w.pi.poly1.vertices[0].y + 3);
+        w.c.moveTo(w.pi.poly1.vertices[0].x + 3, w.pi.poly1.vertices[0].y - 3);
+        w.c.lineTo(w.pi.poly1.vertices[0].x - 3, w.pi.poly1.vertices[0].y + 3);
+        w.c.stroke();
+    }
+//     if(w.pi.data.poly1_ints) for(var i = 0; i < w.pi.data.poly1_ints.length; i++) if(w.pi.data.poly1_ints[i].i2 > -1) {
+//         w.c.fillStyle = "rgb(" + Math.floor((i / w.pi.data.poly1_ints.length) * 255) + ",0,0)";
+//         if(w.pi.data.poly1_ints[i].out) w.c.fillRect(w.pi.data.poly1_ints[i].x - 2, w.pi.data.poly1_ints[i].y - 2, 4, 4);
+//         else w.c.fillRect(w.pi.data.poly1_ints[i].x - 3, w.pi.data.poly1_ints[i].y - 3, 6, 6);
+//     }
+    w.c.strokeRect(w.pi.poly2.vertices[0].x - 3, w.pi.poly2.vertices[0].y - 3, 6, 6);
+    if(w.pi.data.poly2_ints) for(var i = 0; i < w.pi.data.poly2_ints.length; i++) if(w.pi.data.poly2_ints[i].i1 > -1) {
+        w.c.fillStyle = "rgb(" + Math.floor((i / w.pi.data.poly2_ints.length) * 255) + ",0,0)";
+        w.c.fillRect(w.pi.data.poly2_ints[i].x - 2, w.pi.data.poly2_ints[i].y - 2, 4, 4);
+    }
+    
+    if(w.loop) setTimeout(loop, 50);
 }
 </script>
 </head>
