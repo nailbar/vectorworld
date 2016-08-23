@@ -28,16 +28,35 @@ function init() {
     for(var i = 0; i < 20; i++) {
         w.polys.push(new poly([
             {'x': 0, 'y': 0},
-            {'x': Math.cos((i / 20) * Math.PI * 2.0) * 20, 'y': Math.sin((i / 20) * Math.PI * 2.0) * 20},
-            {'x': Math.cos(((i + 0.9) / 20) * Math.PI * 2.0) * 20, 'y': Math.sin(((i + 0.9) / 20) * Math.PI * 2.0) * 20}
+            {'x': Math.cos((i / 20) * Math.PI * 2.0) * 40, 'y': Math.sin((i / 20) * Math.PI * 2.0) * 40},
+            {'x': Math.cos(((i + 1) / 20) * Math.PI * 2.0) * 40, 'y': Math.sin(((i + 1) / 20) * Math.PI * 2.0) * 40}
         ], {'r': i / 20, 'g': 0.5, 'b': 1 - i / 20}, {'y': i / 20, 'z': i / 20}));
     }
+    w.p = new poly();
     w.tick = 0;
     loop();
 }
 function loop() {
+    w.c.clearRect(0, 0, w.canvas.width, w.canvas.height);
     w.tick++;
     for(var i = 0; i < w.polys.length; i++) w.polys[i].drawAt(w.c, {'x': 100, 'y': 100}, w.tick * 0.01);
+    
+    // Test line intersection
+    w.inter = {
+        'line1a': { 'x': 350, 'y': 200 },
+        'line1b': { 'x': 350 + Math.cos(w.tick * 0.01) * 150, 'y': 200 + Math.sin(w.tick * 0.01) * 150 },
+        'line2a': { 'x': 420, 'y': 210 },
+        'line2b': { 'x': 420 + Math.cos(w.tick * 0.021) * 150, 'y': 210 + Math.sin(w.tick * 0.021) * 150 }
+    };
+    w.inter.cross = w.p.getLineIntersection(w.inter.line1a, w.inter.line1b, w.inter.line2a, w.inter.line2b);
+    w.c.beginPath();
+    w.c.moveTo(w.inter.line1a.x, w.inter.line1a.y);
+    w.c.lineTo(w.inter.line1b.x, w.inter.line1b.y);
+    w.c.moveTo(w.inter.line2a.x, w.inter.line2a.y);
+    w.c.lineTo(w.inter.line2b.x, w.inter.line2b.y);
+    w.c.stroke();
+    if(w.inter.cross) w.c.strokeRect(w.inter.cross.x - 3, w.inter.cross.y - 3, 6, 6);
+    
     setTimeout(loop, 50);
 }
 </script>

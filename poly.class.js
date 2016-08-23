@@ -3,18 +3,6 @@
  */
 function poly(vertices, color, dir) {
     
-    /** Defaults for omitted input */
-    if(!vertices) vertices = [];
-    if(!color) color = {
-        'r': 0.5,
-        'g': 0.5,
-        'b': 0.5
-    };
-    if(!dir) dir = {
-        'y': 0,
-        'z': 0
-    };
-    
     /** List of vertices in polygon */
     this.vertices = vertices;
     
@@ -23,6 +11,25 @@ function poly(vertices, color, dir) {
     
     /** Polygon direction / tilt */
     this.dir = dir;
+    
+    /** Defaults for omitted input */
+    if(!vertices) vertices = [];
+    if(!color) color = {
+        'r': 0.5,
+        'g': 0.5,
+        'b': 0.5,
+        'gloss': 0
+    };
+    if(!color.r) color.r = 0;
+    if(!color.g) color.g = 0;
+    if(!color.b) color.b = 0;
+    if(!color.gloss) color.gloss = 0;
+    if(!dir) dir = {
+        'y': 0,
+        'z': 0
+    };
+    if(!dir.y) dir.y = 0;
+    if(!dir.z) dir.z = 0;
     
     /**
      * Draw the polygon
@@ -43,10 +50,10 @@ function poly(vertices, color, dir) {
         
         // Calculate shadow and phong
         this.color.exposure = Math.cos((this.dir.y - sun) * Math.PI * 2.0);
-        this.color.light = Math.min(1.0, Math.max(0, this.color.exposure / 0.5 + 0.5));
-        this.color.light = this.color.light + (1.0 - this.color.light) * (1.0 - this.dir.z);
+        this.color.light = Math.min(1.0, Math.max(0, this.color.exposure * (0.2 + this.dir.z * 0.8) + 1.0));
+        this.color.phong = 0;
         if(this.dir.z < 0.01) this.color.phong = 0;
-        else this.color.phong = Math.min(1.0, Math.max(0, (this.color.exposure - (1.0 - 0.1 * this.dir.z)) / (0.15 * this.dir.z)));
+        else this.color.phong = Math.min(1.0, Math.max(0, (this.color.exposure - (1.0 - 0.1 * this.dir.z)) / (0.15 * this.dir.z))) * this.color.gloss;
         
         // Set color
         this.color.ri = Math.min(255, Math.max(0, Math.floor(this.color.r * 256.0 * this.color.light + 256.0 * this.color.phong)));
@@ -66,5 +73,42 @@ function poly(vertices, color, dir) {
         c.translate(pos.x, pos.y);
         this.draw(c, sun);
         c.restore();
+    }
+    
+    /**
+     * Calculate where two lines cross
+     */
+    this.getLineIntersection = function(line1a, line1b, line2a, line2b) {
+        
+        // Convert line 1
+        var l1_a = line1b.y - line1a.y;
+        var l1_b = line1a.x - line1b.x;
+        var l1_c = l1_a * line1a.x + l1_b * line1a.y;
+        
+        // Convert line 2
+        var l2_a = line2b.y - line2a.y;
+        var l2_b = line2a.x - line2b.x;
+        var l2_c = l2_a * line2a.x + l2_b * line2a.y;
+        
+        // Check intersection
+        var d = l1_a * l2_b - l2_a * l1_b;
+        if(d == 0) return false; // Parallel
+        var intersection = {
+            'x': (l2_b * l1_c - l1_b * l2_c) / d,
+            'y': (l1_a * l2_c - l2_a * l1_c) / d
+        };
+        
+        // Check segment boundraries (take floating point errors into account :-P)
+        if(Math.min(line1a.x, line1b.x) > intersection.x + 0.00001) return false;
+        if(Math.max(line1a.x, line1b.x) < intersection.x - 0.00001) return false;
+        if(Math.min(line2a.x, line2b.x) > intersection.x + 0.00001) return false;
+        if(Math.max(line2a.x, line2b.x) < intersection.x - 0.00001) return false;
+        if(Math.min(line1a.y, line1b.y) > intersection.y + 0.00001) return false;
+        if(Math.max(line1a.y, line1b.y) < intersection.y - 0.00001) return false;
+        if(Math.min(line2a.y, line2b.y) > intersection.y + 0.00001) return false;
+        if(Math.max(line2a.y, line2b.y) < intersection.y - 0.00001) return false;
+        
+        // Intersection found, return it
+        return intersection;
     }
 }
