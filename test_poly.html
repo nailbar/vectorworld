@@ -72,9 +72,13 @@ function loop() {
             {'x': 100 + Math.cos(w.tick * 0.013) * 50, 'y': 250 + Math.sin(w.tick * 0.016) * 50}
         ])
     }
+    w.pi.data = w.p.cutPoly(w.pi.poly1.vertices, w.pi.poly2.vertices);
+    for(var i = 0; i < w.pi.data.poly.length; i++) if(w.pi.data.poly[i].length) {
+        w.p.vertices = w.pi.data.poly[i];
+        w.p.draw(w.c);
+    }
     w.pi.poly1.stroke(w.c);
     w.pi.poly2.stroke(w.c);
-    w.pi.data = w.p.getPolyIntersections(w.pi.poly1.vertices, w.pi.poly2.vertices);
     if(w.pi.data.start_outside) w.c.strokeRect(w.pi.poly1.vertices[0].x - 3, w.pi.poly1.vertices[0].y - 3, 6, 6);
     else {
         w.c.beginPath();

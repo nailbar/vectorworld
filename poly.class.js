@@ -13,23 +13,23 @@ function poly(vertices, color, dir) {
     this.dir = dir;
     
     /** Defaults for omitted input */
-    if(!vertices) vertices = [];
-    if(!color) color = {
+    if(!this.vertices) this.vertices = [];
+    if(!this.color) this.color = {
         'r': 0.5,
         'g': 0.5,
         'b': 0.5,
         'gloss': 0
     };
-    if(!color.r) color.r = 0;
-    if(!color.g) color.g = 0;
-    if(!color.b) color.b = 0;
-    if(!color.gloss) color.gloss = 0;
-    if(!dir) dir = {
+    if(!this.color.r) this.color.r = 0;
+    if(!this.color.g) this.color.g = 0;
+    if(!this.color.b) this.color.b = 0;
+    if(!this.color.gloss) this.color.gloss = 0;
+    if(!this.dir) this.dir = {
         'y': 0,
         'z': 0
     };
-    if(!dir.y) dir.y = 0;
-    if(!dir.z) dir.z = 0;
+    if(!this.dir.y) this.dir.y = 0;
+    if(!this.dir.z) this.dir.z = 0;
     
     /**
      * Draw the polygon
@@ -162,7 +162,8 @@ function poly(vertices, color, dir) {
      * Polygin intersection calculations
      */
     this.getPolyIntersections = function(poly1, poly2) {
-        var v = {};
+        this.v = {};
+        var v = this.v;
         
         // Check if bounding boxes intersect
         v.bbox1 = this.getBoundingBox(poly1);
@@ -305,11 +306,146 @@ function poly(vertices, color, dir) {
             }
         }
         
-//         // Merge the polygons
-//         v.merged = [];
-//         for(var i = 0; i < 1000; i++) {
-//             v.merged.push(v.poly1_ints[i]
-//         }
+        // Done, return results
+        return v;
+    }
+    
+    /**
+     * Cut a polygon by another
+     */
+    this.cutPoly = function(poly1, poly2) {
+        var v = this.getPolyIntersections(poly1, poly2);
+        
+        // Cut poly1 by poly2
+        v.polyi = -1;
+        v.poly = [];
+        v.i1 = 0;
+        v.i2 = 0;
+        v.path = 1;
+        v.start = 0;
+        v.poly_start = 0;
+        v.first_intersection = 0;
+        v.next = 0;
+        v.debug = "";
+        
+        // Starting outside poly2, set position for first polygon
+        if(v.start_outside) v.polyi = 0;
+        
+        // Starting inside poly2, find the next outside position
+        else for(var i = 0; i < v.poly1_ints.length - 1; i++) if(v.poly1_ints[i].i2 > -1) {
+            
+            // Set the start position so we know when we're done
+            v.i1 = i;
+            v.polyi = 1;
+            v.start = i;
+            v.poly_start = i;
+            v.next = i;
+            break;
+        
+        // Mark the inside polygons as used
+        } else v.poly1_ints[i].used = true;
+        
+        // Start tracing
+        v.debug += "Tracing starts at " + v.i1;
+        if(v.polyi > -1) for(var i = 0; i < 10000; i++) {
+            
+            // Create the new polygon if it doesn't exist
+            while(v.poly.length <= v.polyi) v.poly.push([]);
+            switch(v.path) {
+                
+                // Look for next path to trace
+                case 0:
+                    for(var u = v.first_intersection + 1; u < v.poly1_ints.length - 1; u++) {
+                        
+                        // Found the next unused intersection
+                        if(v.poly1_ints[u].i2 > -1 && !v.poly1_ints[u].used) {
+                            v.first_intersection = 0;
+                            v.i1 = u;
+                            v.debug += "\nTracing starts at " + v.i1;
+                            v.polyi++;
+                            v.poly_start = v.i1;
+                            v.path = 1;
+                            break;
+                            
+                        // Mark the inside polygons as used
+                        } else v.poly1_ints[u].used = true;
+                    }
+                    
+                    // No unused intersections, that means we're done
+                    if(v.path == 0) {
+                        v.debug += "\nTracing complete";
+                        i = 10000;
+                    }
+                    break;
+                
+                // Tracing poly1
+                case 1:
+                    
+                    // Add this vertex to list
+                    v.debug += "\nAdding poly1:" + v.i1;
+                    v.poly[v.polyi].push({
+                        'x': v.poly1_ints[v.i1].x,
+                        'y': v.poly1_ints[v.i1].y
+                    });
+                    v.poly1_ints[v.i1].used = true;
+                    
+                    // Move on to next vertex
+                    v.i1 = (v.i1 + 1) % v.poly1_ints.length;
+                    
+                    // Polygon is finished when we reach its start
+                    if(v.i1 == v.poly_start) {
+                        v.debug += "\nPolygon complete";
+                        v.path = 0;
+                    
+                    // Found an intersection, start tracing poly2
+                    } else if(v.poly1_ints[v.i1].i2 > -1) {
+                        if(!v.first_intersection) v.first_intersection = v.i1;
+                        v.path = 3; // Safety feature if intersection is broken (shouldn't be, but you know how it is)
+                        
+                        // Look where that intersection leads
+                        for(var u = 0; u < v.poly2_ints.length; u++) if(v.poly2_ints[u].i1 == v.poly1_ints[v.i1].i1 && v.poly2_ints[u].i2 == v.poly1_ints[v.i1].i2) {
+                            v.i2 = u;
+                            v.path = 2;
+                            v.debug += "\nIntersection at poly1:" + v.i1 + " leading to poly2:" + v.i2;
+                            break;
+                        }
+                    }
+                    break;
+                
+                // Tracing poly2
+                case 2:
+                    
+                    // Add this vertex to list
+                    v.debug += "\nAdding poly2:" + v.i2;
+                    v.poly[v.polyi].push({
+                        'x': v.poly2_ints[v.i2].x,
+                        'y': v.poly2_ints[v.i2].y
+                    });
+                    
+                    // Move on to next vertex
+                    v.i2 = (v.i2 == 0 ? v.poly2_ints.length : v.i2) - 1;
+                    
+                    // Found an intersection, start tracing poly2
+                    if(v.poly2_ints[v.i2].i1 > -1) {
+                        v.path = 3; // Safety feature if intersection is broken (shouldn't be, but you know how it is)
+                        
+                        // Look where that intersection leads
+                        for(var u = 0; u < v.poly1_ints.length; u++) if(v.poly1_ints[u].i1 == v.poly2_ints[v.i2].i1 && v.poly1_ints[u].i2 == v.poly2_ints[v.i2].i2) {
+                            v.i1 = u;
+                            v.path = 1;
+                            v.debug += "\nIntersection at poly2:" + v.i2 + " leading to poly1:" + v.i1;
+                            
+                            // Polygon is finished when we reach its start
+                            if(v.i1 == v.poly_start) {
+                                v.debug += "\nPolygon complete";
+                                v.path = 0;
+                            }
+                            break;
+                        }
+                    }
+                    break;
+            }
+        }
         
         // Done, return results
         return v;
