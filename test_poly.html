@@ -16,6 +16,7 @@ canvas {
 }
 </style>
 <script type='text/javascript' src='world.class.js'></script>
+<script type='text/javascript' src='poly.funcs.js'></script>
 <script type='text/javascript' src='poly.class.js'></script>
 <script type='text/javascript' src='part.class.js'></script>
 <script type='text/javascript' src='item.class.js'></script>
@@ -49,7 +50,7 @@ function loop() {
         'line2a': { 'x': 420, 'y': 210 },
         'line2b': { 'x': 420 + Math.cos(w.tick * 0.021) * 150, 'y': 210 + Math.sin(w.tick * 0.021) * 150 }
     };
-    w.inter.cross = w.p.getLineIntersection(w.inter.line1a, w.inter.line1b, w.inter.line2a, w.inter.line2b);
+    w.inter.cross = poly_funcs.getLineIntersection(w.inter.line1a, w.inter.line1b, w.inter.line2a, w.inter.line2b);
     w.c.beginPath();
     w.c.moveTo(w.inter.line1a.x, w.inter.line1a.y);
     w.c.lineTo(w.inter.line1b.x, w.inter.line1b.y);
@@ -70,15 +71,26 @@ function loop() {
             {'x': 200 + Math.cos(w.tick * 0.011) * 50, 'y': 200 + Math.sin(w.tick * 0.014) * 50},
             {'x': 150 + Math.cos(w.tick * 0.012) * 50, 'y': 300 + Math.sin(w.tick * 0.015) * 50},
             {'x': 100 + Math.cos(w.tick * 0.013) * 50, 'y': 250 + Math.sin(w.tick * 0.016) * 50}
-        ])
+        ], {'r': 1, 'g': 0, 'b': 0}),
+        'poly3': new poly([
+            {'x': 200 - Math.cos(w.tick * 0.010) * 50, 'y': 200 - Math.sin(w.tick * 0.012) * 50},
+            {'x': 150 - Math.cos(w.tick * 0.011) * 50, 'y': 300 - Math.sin(w.tick * 0.013) * 50},
+            {'x': 100 - Math.cos(w.tick * 0.012) * 50, 'y': 250 - Math.sin(w.tick * 0.014) * 50}
+        ], {'r': 0, 'g': 1, 'b': 0})
     }
-    w.pi.data = w.p.cutPoly(w.pi.poly1.vertices, w.pi.poly2.vertices);
-    for(var i = 0; i < w.pi.data.poly.length; i++) if(w.pi.data.poly[i].length) {
-        w.p.vertices = w.pi.data.poly[i];
-        w.p.draw(w.c);
+    w.pi.data = poly_funcs.mergePoly(w.pi.poly1.vertices, w.pi.poly2.vertices);
+    w.pi.data2 = poly_funcs.cutPoly(w.pi.data.poly[0], w.pi.poly3.vertices);
+    w.pi.poly1.draw(w.c);
+    w.pi.poly2.draw(w.c);
+    w.pi.poly3.draw(w.c);
+    for(var i = 0; i < w.pi.data2.poly.length; i++) if(w.pi.data2.poly[i].length) {
+        w.p.vertices = w.pi.data2.poly[i];
+        //w.p.draw(w.c);
+        //w.c.save();
+        //w.c.translate(10, 10);
+        w.p.stroke(w.c);
+        //w.c.restore();
     }
-    w.pi.poly1.stroke(w.c);
-    w.pi.poly2.stroke(w.c);
     if(w.pi.data.start_outside) w.c.strokeRect(w.pi.poly1.vertices[0].x - 3, w.pi.poly1.vertices[0].y - 3, 6, 6);
     else {
         w.c.beginPath();
